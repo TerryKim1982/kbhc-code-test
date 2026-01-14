@@ -1,11 +1,17 @@
 package com.kbhc.codetest.entity.member;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "member")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Member {
 
     @Id
@@ -21,7 +27,7 @@ public class Member {
     @Column(nullable = false, length = 100, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)

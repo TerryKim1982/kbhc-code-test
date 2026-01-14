@@ -17,7 +17,7 @@ public class MemberController {
     private final MemberService memberService;
 
     @PostMapping(value = "/join")
-    public ResponseEntity<?> join(@RequestBody RequestMemberJoin member) {
-        return null;
+    public ResponseEntity<?> join(@RequestBody RequestMemberJoin request) {
+        return memberService.join(request);
     }
 }
