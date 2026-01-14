@@ -4,6 +4,8 @@ import com.kbhc.codetest.dto.ApiResponse;
 import com.kbhc.codetest.dto.member.request.RequestMemberJoin;
 import com.kbhc.codetest.dto.member.request.RequestMemberLogin;
 import com.kbhc.codetest.entity.member.Member;
+import com.kbhc.codetest.exception.DuplicateException;
+import com.kbhc.codetest.exception.NotFoundException;
 import com.kbhc.codetest.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +27,7 @@ public class MemberService {
     public ResponseEntity<?> join(RequestMemberJoin request) {
         // 이메일로 이미 가입되어있는지 확인
         if(isAlreadyMember(request.getEmail())) {
-            // FIXME. 나중에 익셉션 추가해서 수정
-            throw new RuntimeException("이미 가입되어 있는 사용자입니다.");
+            throw new DuplicateException("이미 가입되어 있는 사용자입니다.");
         }
         // 회원가입 절차 진행
         LocalDateTime now = LocalDateTime.now();
@@ -45,12 +46,11 @@ public class MemberService {
     public ResponseEntity<?> login(RequestMemberLogin request) {
         Optional<Member> memberOptional = memberRepository.findByEmail(request.getEmail());
         if(memberOptional.isEmpty()) {
-            // FIXME. 나중에 익셉션 추가해서 수정
-            throw new RuntimeException("존재하지 않는 사용자 이거나 비밀번호가 일치하지 않습니다.");
+            throw new NotFoundException("존재하지 않는 사용자 이거나 비밀번호가 일치하지 않습니다.");
         }
         Member member = memberOptional.get();
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+            throw new NotFoundException("존재하지 않는 사용자 이거나 비밀번호가 일치하지 않습니다.");
         }
         return ResponseEntity.ok(ApiResponse.success("로그인 성공"));
     }
