@@ -2,7 +2,7 @@ package com.kbhc.codetest.api.member.service;
 
 import com.kbhc.codetest.dto.ApiResponse;
 import com.kbhc.codetest.dto.member.request.RequestMemberJoin;
-import com.kbhc.codetest.dto.member.request.RequestMemberLogin;
+import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import com.kbhc.codetest.entity.member.Member;
 import com.kbhc.codetest.exception.DuplicateException;
 import com.kbhc.codetest.exception.NotFoundException;

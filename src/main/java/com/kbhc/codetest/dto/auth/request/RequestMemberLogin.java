@@ -1,4 +1,4 @@
-package com.kbhc.codetest.dto.member.request;
+package com.kbhc.codetest.dto.auth.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

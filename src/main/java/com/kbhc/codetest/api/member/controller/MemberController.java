@@ -2,7 +2,7 @@ package com.kbhc.codetest.api.member.controller;
 
 import com.kbhc.codetest.api.member.service.MemberService;
 import com.kbhc.codetest.dto.member.request.RequestMemberJoin;
-import com.kbhc.codetest.dto.member.request.RequestMemberLogin;
+import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
