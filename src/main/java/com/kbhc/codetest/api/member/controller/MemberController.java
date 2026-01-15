@@ -22,9 +22,4 @@ public class MemberController {
     public ResponseEntity<?> join(@Valid @RequestBody RequestMemberJoin request) {
         return memberService.join(request);
     }
-
-    @PostMapping(value = "/login")
-    public ResponseEntity<?> login(@Valid @RequestBody RequestMemberLogin request) {
-        return memberService.login(request);
-    }
 }

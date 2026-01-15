@@ -43,18 +43,6 @@ public class MemberService {
         return ResponseEntity.ok(ApiResponse.success("회원가입이 성공적으로 완료되었습니다."));
     }
 
-    public ResponseEntity<?> login(RequestMemberLogin request) {
-        Optional<Member> memberOptional = memberRepository.findByEmail(request.getEmail());
-        if(memberOptional.isEmpty()) {
-            throw new NotFoundException("존재하지 않는 사용자 이거나 비밀번호가 일치하지 않습니다.");
-        }
-        Member member = memberOptional.get();
-        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new NotFoundException("존재하지 않는 사용자 이거나 비밀번호가 일치하지 않습니다.");
-        }
-        return ResponseEntity.ok(ApiResponse.success("로그인 성공"));
-    }
-
     private boolean isAlreadyMember(String email) {
         return memberRepository.existsByEmail(email);
     }
