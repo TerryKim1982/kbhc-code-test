@@ -1,6 +1,7 @@
 package com.kbhc.codetest.api.auth.controller;
 
 import com.kbhc.codetest.api.auth.jwt.dto.JwtToken;
+import com.kbhc.codetest.api.auth.jwt.dto.JwtTokenRequest;
 import com.kbhc.codetest.api.auth.service.AuthService;
 import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import lombok.RequiredArgsConstructor;
@@ -32,5 +33,10 @@ public class AuthController {
         String accessToken = authorization.substring(7);
         authService.logout(accessToken);
         return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<JwtToken> reissue(@RequestBody JwtTokenRequest request) {
+        return ResponseEntity.ok(authService.reissue(request));
     }
 }

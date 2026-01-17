@@ -2,6 +2,7 @@ package com.kbhc.codetest.api.auth.service;
 
 import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
 import com.kbhc.codetest.api.auth.jwt.dto.JwtToken;
+import com.kbhc.codetest.api.auth.jwt.dto.JwtTokenRequest;
 import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import com.kbhc.codetest.exception.NotFoundException;
 import com.kbhc.codetest.repository.MemberRepository;
@@ -70,24 +71,26 @@ public class AuthService {
     }
 
     @Transactional
-    public JwtToken reissue(String refreshToken) {
+    public JwtToken reissue(JwtTokenRequest request) {
         // 1. Refresh Token 유효성 검증
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+        if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
             throw new RuntimeException("리프레시 토큰이 유효하지 않습니다.");
         }
 
-        // 2. Token에서 Email 추출
-        String email = jwtTokenProvider.getEmail(refreshToken);
+        // 2. access Token에서 Email 추출
+        String email = jwtTokenProvider.getEmailFromExpiredAccessToken(request.getAccessToken());
 
         // 3. Redis에 저장된 Refresh Token과 일치하는지 확인
         String savedRefreshToken = redisService.getRefreshToken(email);
-        if (!refreshToken.equals(savedRefreshToken)) {
-            throw new RuntimeException("리프레시 토큰 정보가 일치하지 않습니다.");
+        if (!request.getRefreshToken().equals(savedRefreshToken)) {
+            throw new RuntimeException("리프레시 토큰 정보가 일치하지 않거나 로그아웃된 사용자 입니다.");
         }
 
         // 4. 새로운 토큰 생성
         if(memberRepository.existsByEmail(email)) {
-            JwtToken newToken = jwtTokenProvider.reissueToken(email);
+            // 만료된 엑세스 토큰에서 권한정보 불러옴
+            String authorities = jwtTokenProvider.getAuthoritiesFromExpiredAccessToken(request.getAccessToken());
+            JwtToken newToken = jwtTokenProvider.reissueToken(email, authorities);
             // 5. Redis에 리프레시 토큰 정보 업데이트
             try {
                 redisService.setRefreshToken(email,

@@ -38,9 +38,14 @@ public class JwtTokenProvider {
 
     // 토큰 생성 (Access, Refresh)
     public JwtToken generateToken(Authentication authentication) {
+
+        String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
         long now = (new Date()).getTime();
         // Access Token: 60분
-        String accessToken = this.createAccessToken(authentication.getName(), now);
+        String accessToken = this.createAccessToken(authentication.getName(), authorities, now);
         // Refresh Token: 8시간
         String refreshToken = this.createRefreshToken(now);
 
@@ -52,9 +57,9 @@ public class JwtTokenProvider {
                 .build();
     }
 
-    public JwtToken reissueToken(String email) {
+    public JwtToken reissueToken(String email, String authorities) {
         long now = (new Date()).getTime();
-        String accessToken = this.createAccessToken(email, now);
+        String accessToken = this.createAccessToken(email, authorities, now);
         String refreshToken = this.createRefreshToken(now);
         return JwtToken.builder()
                 .grantType("Bearer")
@@ -99,9 +104,14 @@ public class JwtTokenProvider {
     }
 
     private Claims parseClaims(String accessToken) {
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
+    }
+
+    private Claims parseClaimsFromExpiredAccessToken(String accessToken) {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
         } catch (ExpiredJwtException e) {
+            // 토큰의 이메일 확인을 위해 엑세스 토큰이 만료되더라도 데이터는 전달
             return e.getClaims();
         }
     }
@@ -127,15 +137,20 @@ public class JwtTokenProvider {
         return (expiration.getTime() - now);
     }
 
-    public String getEmail(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build()
-                .parseClaimsJws(token).getBody().getSubject();
+    // 만료된 엑세스 토큰에서 이메일 정보를 추출
+    public String getEmailFromExpiredAccessToken(String accessToken) {
+        return parseClaimsFromExpiredAccessToken(accessToken).getSubject();
     }
 
-    public String createAccessToken(String email, long now) {
+    // 만료된 엑세스 토큰에서 권한 정보 추출
+    public String getAuthoritiesFromExpiredAccessToken(String accessToken) {
+        return parseClaimsFromExpiredAccessToken(accessToken).get("auth").toString();
+    }
+
+    public String createAccessToken(String email, String authorities, long now) {
         return Jwts.builder()
                 .setSubject(email)
-                .claim("auth", "")
+                .claim("auth", authorities)
                 .setExpiration(new Date(now + accessTokenValidityInMilliseconds))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
