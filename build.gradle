@@ -32,6 +32,10 @@ dependencies {
     // JSONObject
     implementation 'org.json:json:20231013'
 
+    // Spring Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     compileOnly    "org.projectlombok:lombok:${lombokVersion}"

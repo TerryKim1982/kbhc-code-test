@@ -1,9 +1,14 @@
 package com.kbhc.codetest.entity.member;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
 
-import java.time.LocalDateTime;
+
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "member")
@@ -30,8 +35,8 @@ public class Member {
     private String password;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 }

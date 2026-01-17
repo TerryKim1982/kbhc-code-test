@@ -1,7 +1,7 @@
 package com.kbhc.codetest.api.auth.controller;
 
-import com.kbhc.codetest.api.auth.jwt.dto.JwtToken;
-import com.kbhc.codetest.api.auth.jwt.dto.JwtTokenRequest;
+import com.kbhc.codetest.dto.jwt.JwtToken;
+import com.kbhc.codetest.dto.jwt.JwtTokenRequest;
 import com.kbhc.codetest.api.auth.service.AuthService;
 import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import lombok.RequiredArgsConstructor;

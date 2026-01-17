@@ -1,7 +1,7 @@
 package com.kbhc.codetest.api.auth.service;
 
 import com.kbhc.codetest.entity.member.Member;
-import com.kbhc.codetest.repository.MemberRepository;
+import com.kbhc.codetest.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;

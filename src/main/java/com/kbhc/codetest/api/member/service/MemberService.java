@@ -4,13 +4,13 @@ import com.kbhc.codetest.dto.ApiResponse;
 import com.kbhc.codetest.dto.member.request.RequestMemberJoin;
 import com.kbhc.codetest.entity.member.Member;
 import com.kbhc.codetest.exception.DuplicateException;
-import com.kbhc.codetest.repository.MemberRepository;
+import com.kbhc.codetest.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class MemberService {
             throw new DuplicateException("이미 가입되어 있는 사용자입니다.");
         }
         // 회원가입 절차 진행
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         Member newMember = Member.builder().
                 email(request.getEmail()).
                 password(passwordEncoder.encode(request.getPassword())).

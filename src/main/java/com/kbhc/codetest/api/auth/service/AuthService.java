@@ -1,11 +1,11 @@
 package com.kbhc.codetest.api.auth.service;
 
 import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
-import com.kbhc.codetest.api.auth.jwt.dto.JwtToken;
-import com.kbhc.codetest.api.auth.jwt.dto.JwtTokenRequest;
+import com.kbhc.codetest.dto.jwt.JwtToken;
+import com.kbhc.codetest.dto.jwt.JwtTokenRequest;
 import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import com.kbhc.codetest.exception.NotFoundException;
-import com.kbhc.codetest.repository.MemberRepository;
+import com.kbhc.codetest.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -101,6 +101,7 @@ public class AuthService {
                 log.error("Redis에 리프레시 토큰 저장 실패, key={}", "RT:"+email, e);
                 throw e;
             }
+            log.debug("새로운 토큰 발급 완료 : {}", newToken);
             return newToken;
         }
         else {

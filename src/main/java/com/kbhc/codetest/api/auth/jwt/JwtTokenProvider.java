@@ -1,6 +1,6 @@
 package com.kbhc.codetest.api.auth.jwt;
 
-import com.kbhc.codetest.api.auth.jwt.dto.JwtToken;
+import com.kbhc.codetest.dto.jwt.JwtToken;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -100,7 +100,7 @@ public class JwtTokenProvider {
         } catch (IllegalArgumentException e) {
             log.info("JWT 토큰이 잘못되었습니다.");
         }
-        return false;
+        return true;
     }
 
     private Claims parseClaims(String accessToken) {

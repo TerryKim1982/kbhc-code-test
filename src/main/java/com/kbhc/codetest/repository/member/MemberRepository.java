@@ -1,4 +1,4 @@
-package com.kbhc.codetest.repository;
+package com.kbhc.codetest.repository.member;
 
 import com.kbhc.codetest.entity.member.Member;
 import org.springframework.data.jpa.repository.JpaRepository;

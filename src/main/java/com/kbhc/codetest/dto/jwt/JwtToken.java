@@ -1,4 +1,4 @@
-package com.kbhc.codetest.api.auth.jwt.dto;
+package com.kbhc.codetest.dto.jwt;
 
 import lombok.Builder;
 import lombok.Getter;
