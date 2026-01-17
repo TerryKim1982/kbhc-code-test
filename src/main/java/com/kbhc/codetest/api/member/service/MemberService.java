@@ -2,10 +2,8 @@ package com.kbhc.codetest.api.member.service;
 
 import com.kbhc.codetest.dto.ApiResponse;
 import com.kbhc.codetest.dto.member.request.RequestMemberJoin;
-import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
 import com.kbhc.codetest.entity.member.Member;
 import com.kbhc.codetest.exception.DuplicateException;
-import com.kbhc.codetest.exception.NotFoundException;
 import com.kbhc.codetest.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +19,6 @@ public class MemberService {
     private final MemberRepository memberRepository;
 
     private final PasswordEncoder passwordEncoder;
-
 
     public ResponseEntity<?> join(RequestMemberJoin request) {
         // 이메일로 이미 가입되어있는지 확인

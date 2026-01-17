@@ -3,16 +3,17 @@ package com.kbhc.codetest.api.auth.service;
 import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
 import com.kbhc.codetest.api.auth.jwt.dto.JwtToken;
 import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
+import com.kbhc.codetest.exception.NotFoundException;
+import com.kbhc.codetest.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -21,40 +22,135 @@ public class AuthService {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisTemplate<String, String> redisTemplate; // Redis 호출
+    private final MemberRepository memberRepository;
+    private final RedisService redisService;
+
+    /**
+     * 사용자 로그인 처리
+     * @param request 로그인 정보
+     * @return 토큰정보
+     * 1. 사용자 로그인 시도
+     * 2. 사용자 인증 처리
+     * 3. 인증정보를 바탕으로 토큰 생성
+     * 4. 리프레시 토큰을 redis에 저장
+     */
 
     @Transactional
     public JwtToken login(RequestMemberLogin request) {
-        // 1. Login ID/PW 를 기반으로 Authentication 객체 생성
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
 
-        // 2. 실제 검증 (사용자 비밀번호 체크)
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        // 1. 사용자 인증정보 설정
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
 
-        // 3. 인증 정보를 기반으로 JWT 토큰 생성
+        Authentication authentication;
+        try {
+            // 2. 사용자 인증
+            authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        } catch (BadCredentialsException e) {
+            log.warn("로그인 실패: 잘못된 자격증명, email={}", request.getEmail());
+            throw e;
+        } catch (Exception e) {
+            log.error("로그인 실패: 알수 없는 에러, email={}", request.getEmail(), e);
+            throw e;
+        }
+
+        // 3. 인증정보를 바탕으로 토큰 생성
         JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
 
-        // 4. RefreshToken Redis 저장 (expirationTime 설정을 통해 자동 삭제 처리)
-        redisTemplate.opsForValue()
-                .set("RT:" + authentication.getName(), jwtToken.getRefreshToken(), jwtToken.getRefreshTokenExpirationTime(), TimeUnit.MILLISECONDS);
-
+        try {
+            // 4. refresh token redis에 저장
+            redisService.setRefreshToken(request.getEmail(),
+                            jwtToken.getRefreshToken(),
+                            jwtToken.getRefreshTokenExpirationTime());
+        } catch (DataAccessException e) {
+            log.error("Redis에 리프레시 토큰 저장 실패, key={}", "RT:" + request.getEmail(), e);
+            throw e;
+        }
         return jwtToken;
     }
 
     @Transactional
-    public void logout(String accessToken) {
-        // Access Token에서 User email 추출
-        Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
-
-        // Redis에서 해당 User email로 저장된 Refresh Token 이 있는지 여부를 확인 후 있을 경우 삭제
-        if (redisTemplate.opsForValue().get("RT:" + authentication.getName()) != null) {
-            // Refresh Token 삭제
-            redisTemplate.delete("RT:" + authentication.getName());
+    public JwtToken reissue(String refreshToken) {
+        // 1. Refresh Token 유효성 검증
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new RuntimeException("리프레시 토큰이 유효하지 않습니다.");
         }
 
-        // Access Token 블랙리스트 처리 (남은 유효시간만큼 Redis에 저장하여 접근 막음)
-        Long expiration = jwtTokenProvider.getExpiration(accessToken);
-        redisTemplate.opsForValue()
-                .set(accessToken, "logout", expiration, TimeUnit.MILLISECONDS);
+        // 2. Token에서 Email 추출
+        String email = jwtTokenProvider.getEmail(refreshToken);
+
+        // 3. Redis에 저장된 Refresh Token과 일치하는지 확인
+        String savedRefreshToken = redisService.getRefreshToken(email);
+        if (!refreshToken.equals(savedRefreshToken)) {
+            throw new RuntimeException("리프레시 토큰 정보가 일치하지 않습니다.");
+        }
+
+        // 4. 새로운 토큰 생성
+        if(memberRepository.existsByEmail(email)) {
+            JwtToken newToken = jwtTokenProvider.reissueToken(email);
+            // 5. Redis에 리프레시 토큰 정보 업데이트
+            try {
+                redisService.setRefreshToken(email,
+                        newToken.getRefreshToken(),
+                        newToken.getRefreshTokenExpirationTime());
+            }
+            catch (DataAccessException e) {
+                log.error("Redis에 리프레시 토큰 저장 실패, key={}", "RT:"+email, e);
+                throw e;
+            }
+            return newToken;
+        }
+        else {
+            throw new NotFoundException("가입되지 않은 사용자 입니다.");
+        }
+    }
+
+    /**
+     * 로그아웃 처리
+     * @param accessToken
+     * 1. 유효한 토큰 인지 검증
+     * 2. 리프레시 토큰 삭제
+     * 3. 액세스 토큰 블랙리스트 처리
+     */
+    @Transactional
+    public void logout(String accessToken) {
+        // FIXME. 예외 처리 추가할 것
+        // 토큰 validation
+        if (accessToken == null || accessToken.isBlank()) {
+            log.warn("빈 토큰으로 로그아웃 요청됨");
+            return;
+        }
+
+        Authentication authentication;
+        try {
+            // 인증 정보 조회
+            authentication = jwtTokenProvider.getAuthentication(accessToken);
+        } catch (Exception e) {
+            // 이미 만료되었거나 위조된 토큰일 수 있음
+            log.warn("로그아웃 실패: 유효하지 않은 엑세스 토큰입니다.", e);
+            return;
+        }
+
+        try {
+            // refresh token 조회
+            String storedRefreshToken = redisService.getRefreshToken(authentication.getName());
+            if (storedRefreshToken != null) {
+                // 리프레시 토큰이 있으면 삭제처리
+                redisService.deleteRefreshToken(authentication.getName());
+                log.debug("Redis에 리프레시 토큰이 삭제되었습니다. key={}", "RT:" + authentication.getName());
+            }
+        } catch (DataAccessException e) {
+            log.error("Redis에 리프레시 토큰 삭제 실패, key={}", "RT:" + authentication.getName(), e);
+        }
+
+        try {
+            Long expiration = jwtTokenProvider.getExpiration(accessToken);
+            if (expiration != null && expiration > 0) {
+                redisService.setBlackList(accessToken, "logout", expiration);
+                log.debug("엑세스 토큰이 블랙리스트 처리 되었습니다. 만료시간={}ms", expiration);
+            }
+        } catch (Exception e) {
+            log.warn("엑세스 토큰 블랙리스트 처리 실패", e);
+        }
     }
 }

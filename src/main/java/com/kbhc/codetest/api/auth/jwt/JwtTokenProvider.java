@@ -25,6 +25,12 @@ import java.util.stream.Collectors;
 public class JwtTokenProvider {
     private final Key key;
 
+    @Value("${jwt.token.access.expired.time}")
+    private long accessTokenValidityInMilliseconds;
+
+    @Value("${jwt.token.refresh.expired.time}")
+    private long refreshTokenValidityInMilliseconds;
+
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
@@ -32,31 +38,29 @@ public class JwtTokenProvider {
 
     // 토큰 생성 (Access, Refresh)
     public JwtToken generateToken(Authentication authentication) {
-        String authorities = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
-
         long now = (new Date()).getTime();
-
-        // Access Token: 30분
-        Date accessTokenExpiresIn = new Date(now + 1800000);
-        String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())
-                .claim("auth", authorities)
-                .setExpiration(accessTokenExpiresIn)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-
-        // Refresh Token: 7일
-        String refreshToken = Jwts.builder()
-                .setExpiration(new Date(now + 604800000))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        // Access Token: 60분
+        String accessToken = this.createAccessToken(authentication.getName(), now);
+        // Refresh Token: 8시간
+        String refreshToken = this.createRefreshToken(now);
 
         return JwtToken.builder()
                 .grantType("Bearer")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .refreshTokenExpirationTime(refreshTokenValidityInMilliseconds)
+                .build();
+    }
+
+    public JwtToken reissueToken(String email) {
+        long now = (new Date()).getTime();
+        String accessToken = this.createAccessToken(email, now);
+        String refreshToken = this.createRefreshToken(now);
+        return JwtToken.builder()
+                .grantType("Bearer")
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .refreshTokenExpirationTime(refreshTokenValidityInMilliseconds)
                 .build();
     }
 
@@ -121,5 +125,26 @@ public class JwtTokenProvider {
 
         // 4. (만료 시간 - 현재 시간)을 계산하여 남은 ms 반환
         return (expiration.getTime() - now);
+    }
+
+    public String getEmail(String token) {
+        return Jwts.parserBuilder().setSigningKey(key).build()
+                .parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public String createAccessToken(String email, long now) {
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("auth", "")
+                .setExpiration(new Date(now + accessTokenValidityInMilliseconds))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String createRefreshToken(long now) {
+        return Jwts.builder()
+                .setExpiration(new Date(now + refreshTokenValidityInMilliseconds))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 }
