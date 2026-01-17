@@ -4,6 +4,7 @@ import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
 import com.kbhc.codetest.dto.jwt.JwtToken;
 import com.kbhc.codetest.dto.jwt.JwtTokenRequest;
 import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
+import com.kbhc.codetest.entity.member.Member;
 import com.kbhc.codetest.exception.NotFoundException;
 import com.kbhc.codetest.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +56,12 @@ public class AuthService {
             throw e;
         }
 
+        Member member = memberRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+        Long memberId = member.getId();
+
         // 3. 인증정보를 바탕으로 토큰 생성
-        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication, memberId);
 
         try {
             // 4. refresh token redis에 저장
@@ -90,7 +95,8 @@ public class AuthService {
         if(memberRepository.existsByEmail(email)) {
             // 만료된 엑세스 토큰에서 권한정보 불러옴
             String authorities = jwtTokenProvider.getAuthoritiesFromExpiredAccessToken(request.getAccessToken());
-            JwtToken newToken = jwtTokenProvider.reissueToken(email, authorities);
+            Long memberId = jwtTokenProvider.getMemberIdFromExpiredAccessToken(request.getAccessToken());
+            JwtToken newToken = jwtTokenProvider.reissueToken(email, memberId, authorities);
             // 5. Redis에 리프레시 토큰 정보 업데이트
             try {
                 redisService.setRefreshToken(email,

@@ -23,4 +23,23 @@ public class HealthController {
                                             @AuthenticationPrincipal UserDetails userDetails) {
         return healthService.sendDateToKafka(userDetails.getUsername(), file);
     }
+
+    @GetMapping(value = "/device")
+    public ResponseEntity<?> getMyDeviceList(@AuthenticationPrincipal UserDetails userDetails) {
+        return healthService.getMyDeviceList(userDetails.getUsername());
+    }
+
+    @GetMapping(value = "/stats/daily")
+    public ResponseEntity<?> getDailyStats(@RequestHeader("Authorization") String token,
+                                           @RequestParam Long deviceId, @RequestParam String start,
+                                           @RequestParam String end) {
+        return healthService.getDailyStats(token, deviceId, start, end);
+    }
+
+    @GetMapping(value = "/stats/monthly")
+    public ResponseEntity<?> getMonthlyStats(@RequestHeader("Authorization") String token,
+                                           @RequestParam Long deviceId, @RequestParam String start,
+                                           @RequestParam String end) {
+        return healthService.getMonthlyStats(token, deviceId, start, end);
+    }
 }

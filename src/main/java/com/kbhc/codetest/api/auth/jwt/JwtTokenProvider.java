@@ -37,7 +37,7 @@ public class JwtTokenProvider {
     }
 
     // 토큰 생성 (Access, Refresh)
-    public JwtToken generateToken(Authentication authentication) {
+    public JwtToken generateToken(Authentication authentication, Long memberId) {
 
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -45,7 +45,7 @@ public class JwtTokenProvider {
 
         long now = (new Date()).getTime();
         // Access Token: 60분
-        String accessToken = this.createAccessToken(authentication.getName(), authorities, now);
+        String accessToken = this.createAccessToken(authentication.getName(), memberId, authorities, now);
         // Refresh Token: 8시간
         String refreshToken = this.createRefreshToken(now);
 
@@ -57,9 +57,9 @@ public class JwtTokenProvider {
                 .build();
     }
 
-    public JwtToken reissueToken(String email, String authorities) {
+    public JwtToken reissueToken(String email, Long memberId, String authorities) {
         long now = (new Date()).getTime();
-        String accessToken = this.createAccessToken(email, authorities, now);
+        String accessToken = this.createAccessToken(email, memberId, authorities, now);
         String refreshToken = this.createRefreshToken(now);
         return JwtToken.builder()
                 .grantType("Bearer")
@@ -146,11 +146,28 @@ public class JwtTokenProvider {
     public String getAuthoritiesFromExpiredAccessToken(String accessToken) {
         return parseClaimsFromExpiredAccessToken(accessToken).get("auth").toString();
     }
+    public Long getMemberIdFromExpiredAccessToken(String accessToken) {
+        String memberId = parseClaimsFromExpiredAccessToken(accessToken).get("member_id").toString();
+        return Long.valueOf(memberId);
+    }
 
-    public String createAccessToken(String email, String authorities, long now) {
+    // 만료된 엑세스 토큰에서 멤버아이디 추출
+    public Long getMemberIdFromToken(String accessToken) {
+        // 1. 토큰의 Claims(페이로드)를 파싱합니다.
+        Claims claims = parseClaims(accessToken);
+        // 2. 저장했던 "member_id" 클레임을 꺼냅니다.
+        Object memberId = claims.get("member_id");
+        if (memberId == null) {
+            throw new RuntimeException("토큰에 member_id 정보가 존재하지 않습니다.");
+        }
+        return Long.valueOf(memberId.toString());
+    }
+
+    public String createAccessToken(String email, Long memberId, String authorities, long now) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("auth", authorities)
+                .claim("member_id", memberId)
                 .setExpiration(new Date(now + accessTokenValidityInMilliseconds))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();

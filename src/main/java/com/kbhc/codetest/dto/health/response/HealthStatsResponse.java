@@ -1,4 +1,4 @@
-package com.kbhc.codetest.dto.health.request;
+package com.kbhc.codetest.dto.health.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,9 +8,9 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 public class HealthStatsResponse {
-    private String date; // LocalDate 또는 YearMonth를 문자열로 전달
+    private String date; // 일별은 날짜, 월별은 년월
     private long totalSteps;
     private double totalCalories;
     private double totalDistance;
-    private String deviceName; // 기기 정보 포함
+    private Long deviceId; // 기기 정보 포함
 }

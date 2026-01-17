@@ -16,7 +16,7 @@ spring:
         spring.json.trusted.packages: "*"
 
   datasource:
-    url: jdbc:mysql://localhost:3306/dev_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/dev_db?serverTimezone=UTC&sessionVariables=time_zone='%2B00:00'&useSSL=false
     username: ${DB_USERNAME:dev}
     password: ${DB_PASSWORD:dev}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -34,14 +34,21 @@ spring:
 
   # --- JPA / Hibernate ---
   jpa:
+    open-in-view: false
+    show-sql: true
     hibernate:
       ddl-auto: update
-    show-sql: true
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
-    open-in-view: false
+        jdbc:
+          time_zone: UTC
+          force_utc_timezone: true
+        type:
+          descriptor:
+            sql:
+              jdbc_timezone_fallback: true
 
   sql:
     init:
@@ -53,9 +60,11 @@ jwt:
   token:
     access:
       expired:
-        time: 300000
+        time: 3000000
     refresh:
       expired:
-        time: 3000000
+        time: 30000000
 
-
+logging:
+  level:
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

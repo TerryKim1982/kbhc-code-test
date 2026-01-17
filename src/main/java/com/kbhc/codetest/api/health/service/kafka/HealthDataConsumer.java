@@ -21,7 +21,6 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Service
@@ -91,7 +90,7 @@ public class HealthDataConsumer {
             healthRecord.addDetail(detail); // 부모-자식 양방향 매핑
 
             // 통계 데이터(일별) 처리
-            LocalDate summaryDate = startLocal.toLocalDate(); // OffsetDateTime -> LocalDate
+            String summaryDate = startLocal.toLocalDate().toString(); // OffsetDateTime -> LocalDate
             updateHealthSummary(device.getMember().getId(), device.getId(), summaryDate, entry);
         });
 
@@ -104,7 +103,7 @@ public class HealthDataConsumer {
     /**
      * 일별 통계 테이블 정보를 갱신합니다.
      */
-    private void updateHealthSummary(Long memberId, Long deviceId, LocalDate date, KafkaHealthData.Entry entry) {
+    private void updateHealthSummary(Long memberId, Long deviceId, String date, KafkaHealthData.Entry entry) {
         HealthSummary summary = healthSummaryRepository.findByMemberIdAndDeviceIdAndSummaryDate(memberId, deviceId, date)
                 .orElseGet(() ->
                         healthSummaryRepository.save(

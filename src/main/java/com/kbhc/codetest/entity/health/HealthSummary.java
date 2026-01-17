@@ -3,8 +3,6 @@ package com.kbhc.codetest.entity.health;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
-
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,7 +20,8 @@ public class HealthSummary {
 
     private Long deviceId;
 
-    private LocalDate summaryDate; // 2024-11-15 형태
+    @Column(name = "summary_date", columnDefinition = "DATE")
+    private String summaryDate;
 
     private int totalSteps;
     private double totalCalories;
