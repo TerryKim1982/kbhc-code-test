@@ -3,7 +3,7 @@ package com.kbhc.codetest.api.health.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbhc.codetest.api.health.service.kafka.HealthDataProducer;
 import com.kbhc.codetest.dto.health.kafka.KafkaHealthData;
-import com.kbhc.codetest.dto.health.request.HealthDataRequest;
+import com.kbhc.codetest.dto.health.request.HealthDataSendRequest;
 import com.kbhc.codetest.util.DateUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,12 +42,12 @@ public class HealthService {
             if(!filteredEntries.isEmpty()){
                 // 필터된 데이터만 kafka로 전송
                 fullData.getData().setEntries(filteredEntries);
-                HealthDataRequest healthDataRequest = new HealthDataRequest();
-                healthDataRequest.setEmail(email);
-                healthDataRequest.setHealthData(fullData);
+                HealthDataSendRequest healthDataSendRequest = new HealthDataSendRequest();
+                healthDataSendRequest.setEmail(email);
+                healthDataSendRequest.setHealthData(fullData);
 
                 // Kafka Producer에게 데이터 전달
-                healthDataProducer.send(healthDataRequest);
+                healthDataProducer.send(healthDataSendRequest);
             }
 
         }

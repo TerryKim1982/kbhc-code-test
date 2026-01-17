@@ -1,1 +1,3 @@
-spring.application.name=code-test
+spring:
+    application:
+      name: code-test

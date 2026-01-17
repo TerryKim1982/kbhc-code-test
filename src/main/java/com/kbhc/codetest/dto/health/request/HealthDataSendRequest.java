@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class HealthDataRequest {
+public class HealthDataSendRequest {
     private String email;
     private KafkaHealthData healthData;
 }
