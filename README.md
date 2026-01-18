@@ -1,47 +1,28 @@
-# kbhc-code-test
-### Backend Developer 채용 과제
+# 데이터베이스 ERD 구조 요약
+## 주요 관계 설명
 
-### 과제 개요
-고객건강활동 정보를 수집하여 서비스를 제공하는 당사 상황에 맞춰, App to App으로 삼성헬스나 애플건강으로 단말로 전달되어 서버로 수집되는 데이터 저장 처리를 위한 Backend 비지니스 프로세스를 구현합니다.
-* Input Data 별첨
+### Member(1) : Device(N)
 
-### 핵심 요구사항
--	데이터베이스 테이블 설계
--	데이터 저장/조회 샘플 코드 작성
--	회원가입
-   - 이름, 닉네임, 이메일, 패스워드
--	로그인
-   - 이메일과 패스워드를 통한 로그인
+한 명의 사용자는 여러 대의 디바이스(스마트 워치, 체중계 등)를 가질 수 있습니다.
 
-### 사용 기술 스택
--	Java 17
--	Spring Boot – Java 사용
--	Spring Data JPA
--	MySQL 8.x
--	Redis or Kafra 등 
-
-### 제출 산출물
-1. 소스코드(코멘트 추가)
-   - GitHub 레포지토리 주소 제출
-   - Git history를 평가에 반영
-2.	데이터베이스 설계 ERD (코멘트 추가)
-3.	데이터 조회 결과 제출 (Daily/Monthly 레코드키 기준)
-4. 구현 방법 및 설명
-   - 프로젝트 구조 설명
-   - 발생한 이슈 및 해결 방법
-   - 필드 설명
-•	steps - 걸음수(int)
-•	calories - 소모 칼로리(float)
-•	distance - 이동거리(float)
-•	recordkey - 사용자 구분 키(varchar)
-
-<Daily>
-Daily	Steps	calories	distance	recordkey
-2024-11.01				
-2024-11.02				
-<Monthly>
-Monthly	Steps	calories	distance	recordkey
-2024-11				
-2024-12				
+Device 테이블의 member_id가 외래키(FK) 역할을 합니다.
 
 
+### Device(1) : HealthRecord(N)
+
+디바이스는 정해진 시간(upload_time)마다 건강 레코드를 업로드합니다.
+
+@UniqueConstraint를 통해 동일한 디바이스가 같은 시간에 중복 데이터를 올리는 것을 방지했습니다.
+
+
+### HealthRecord(1) : HealthDetail(N)
+
+한 번의 업로드(Record) 안에 여러 개의 상세 활동 내역(Detail, 예: 10분 단위 걸음 수)이 포함되는 구조입니다.
+
+CascadeType.ALL을 통해 레코드가 저장될 때 상세 내역도 함께 저장되도록 설계되었습니다.
+
+HealthSummary (별도 요약 테이블)
+
+조회 성능을 극대화하기 위한 통계용 테이블입니다.
+
+member_id, device_id, summaryDate를 묶어 유니크 제약을 줌으로써 하루에 단 하나의 요약 레코드만 존재하게 설정했습니다.

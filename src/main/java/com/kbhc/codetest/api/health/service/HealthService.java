@@ -1,25 +1,18 @@
 package com.kbhc.codetest.api.health.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
-import com.kbhc.codetest.api.health.service.kafka.HealthDataProducer;
 import com.kbhc.codetest.dto.ApiResponse;
-import com.kbhc.codetest.dto.health.kafka.KafkaHealthData;
-import com.kbhc.codetest.dto.health.request.HealthDataSendRequest;
 import com.kbhc.codetest.dto.health.response.HealthStatsResponse;
 import com.kbhc.codetest.dto.health.response.MyDeviceResponse;
 import com.kbhc.codetest.entity.health.Device;
 import com.kbhc.codetest.entity.health.HealthSummary;
 import com.kbhc.codetest.repository.health.DeviceRepository;
 import com.kbhc.codetest.repository.health.HealthSummaryRepository;
-import com.kbhc.codetest.util.DateUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,47 +23,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class HealthService {
 
-    private final HealthDataProducer healthDataProducer;
 
-    private final ObjectMapper objectMapper;
 
     private final DeviceRepository deviceRepository;
     private final HealthSummaryRepository healthSummaryRepository;
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    public ResponseEntity<?> sendDateToKafka(String email, MultipartFile file) {
-        try {
-            // 파일 역직렬화
-            KafkaHealthData fullData = objectMapper.readValue(file.getInputStream(), KafkaHealthData.class);
 
-            OffsetDateTime lastUpdate = fullData.getLastUpdate();
-
-            List<KafkaHealthData.Entry> filteredEntries = fullData.getData().getEntries().stream().toList().stream()
-                    .filter(entry -> {
-                        OffsetDateTime entryTime = DateUtils.parseToOffsetDateTime(entry.getPeriod().getFrom());
-                        return entryTime.isAfter(lastUpdate);
-                    })
-                    .toList();
-            log.info("필터링 전: {}건 -> 필터링 후: {}건", fullData.getData().getEntries().size(), filteredEntries.size());
-
-            if(!filteredEntries.isEmpty()){
-                // 필터된 데이터만 kafka로 전송
-                fullData.getData().setEntries(filteredEntries);
-                HealthDataSendRequest healthDataSendRequest = new HealthDataSendRequest();
-                healthDataSendRequest.setEmail(email);
-                healthDataSendRequest.setHealthData(fullData);
-
-                // Kafka Producer에게 데이터 전달
-                healthDataProducer.send(healthDataSendRequest);
-            }
-
-        }
-        catch (IOException e) {
-            return ResponseEntity.internalServerError().body("파일 처리중 오류가 발생하였습니다.");
-        }
-        return ResponseEntity.ok("파일 업로드 및 데이터 분석 요청 완료 (파일명: " + file.getOriginalFilename() + ")");
-    }
 
     public ResponseEntity<?> getMyDeviceList(String email) {
         List<Device> myDeviceList = deviceRepository.findAllByMember_Email(email);

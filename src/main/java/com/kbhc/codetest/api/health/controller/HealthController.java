@@ -1,6 +1,7 @@
 package com.kbhc.codetest.api.health.controller;
 
 import com.kbhc.codetest.api.health.service.HealthService;
+import com.kbhc.codetest.api.health.service.kafka.KafkaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -18,10 +19,12 @@ public class HealthController {
 
     private final HealthService healthService;
 
+    private final KafkaService kafkaService;
+
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadHealthData(@RequestPart("file") MultipartFile file,
                                             @AuthenticationPrincipal UserDetails userDetails) {
-        return healthService.sendDateToKafka(userDetails.getUsername(), file);
+        return kafkaService.sendDateToKafka(userDetails.getUsername(), file);
     }
 
     @GetMapping(value = "/device")
