@@ -12,5 +12,5 @@ public class HealthStatsResponse {
     private long totalSteps;
     private double totalCalories;
     private double totalDistance;
-    private Long deviceId; // 기기 정보 포함
+    private String recordKey;
 }

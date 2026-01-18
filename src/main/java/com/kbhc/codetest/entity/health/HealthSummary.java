@@ -20,6 +20,8 @@ public class HealthSummary {
 
     private Long deviceId;
 
+    private String recordKey;
+
     @Column(name = "summary_date", columnDefinition = "DATE")
     private String summaryDate;
 

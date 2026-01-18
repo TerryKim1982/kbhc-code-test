@@ -102,7 +102,7 @@ public class HealthService {
                         .totalSteps(s.getTotalSteps())
                         .totalCalories(s.getTotalCalories())
                         .totalDistance(s.getTotalDistance())
-                        .deviceId(s.getDeviceId())
+                        .recordKey(s.getRecordKey())
                         .build()
                 ).toList();
         if(summaries.isEmpty()){
@@ -136,7 +136,7 @@ public class HealthService {
                         .totalSteps(dailyData.stream().mapToLong(HealthSummary::getTotalSteps).sum())
                         .totalCalories(dailyData.stream().mapToDouble(HealthSummary::getTotalCalories).sum())
                         .totalDistance(dailyData.stream().mapToDouble(HealthSummary::getTotalDistance).sum())
-                        .deviceId(deviceId)
+                        .recordKey(dailyData.get(0).getRecordKey())
                         .build();
                 result.add(monthlySum);
             }

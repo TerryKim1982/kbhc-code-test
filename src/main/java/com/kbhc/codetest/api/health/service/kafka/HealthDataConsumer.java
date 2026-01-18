@@ -91,7 +91,7 @@ public class HealthDataConsumer {
 
             // 통계 데이터(일별) 처리
             String summaryDate = startLocal.toLocalDate().toString(); // OffsetDateTime -> LocalDate
-            updateHealthSummary(device.getMember().getId(), device.getId(), summaryDate, entry);
+            updateHealthSummary(device.getMember().getId(), device.getId(), device.getRecordKey(), summaryDate, entry);
         });
 
         healthRecordRepository.save(healthRecord);
@@ -103,7 +103,7 @@ public class HealthDataConsumer {
     /**
      * 일별 통계 테이블 정보를 갱신합니다.
      */
-    private void updateHealthSummary(Long memberId, Long deviceId, String date, KafkaHealthData.Entry entry) {
+    private void updateHealthSummary(Long memberId, Long deviceId, String recordKey, String date, KafkaHealthData.Entry entry) {
         HealthSummary summary = healthSummaryRepository.findByMemberIdAndDeviceIdAndSummaryDate(memberId, deviceId, date)
                 .orElseGet(() ->
                         healthSummaryRepository.save(
@@ -111,6 +111,7 @@ public class HealthDataConsumer {
                                 .memberId(memberId)
                                 .deviceId(deviceId)
                                 .summaryDate(date)
+                                .recordKey(recordKey)
                                 .totalSteps(0)
                                 .totalCalories(0.0)
                                 .totalDistance(0.0)

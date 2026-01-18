@@ -146,6 +146,8 @@ public class JwtTokenProvider {
     public String getAuthoritiesFromExpiredAccessToken(String accessToken) {
         return parseClaimsFromExpiredAccessToken(accessToken).get("auth").toString();
     }
+
+    // 토큰에서 멤버아이디 추출
     public Long getMemberIdFromExpiredAccessToken(String accessToken) {
         String memberId = parseClaimsFromExpiredAccessToken(accessToken).get("member_id").toString();
         return Long.valueOf(memberId);
