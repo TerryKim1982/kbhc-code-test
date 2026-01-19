@@ -1,8 +1,10 @@
 package com.kbhc.codetest.exception;
 
+import com.kbhc.codetest.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,22 +32,24 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
-    public ResponseEntity<String> handleNotFoundException(NotFoundException e) {
+    public ResponseEntity<?> handleNotFoundException(NotFoundException e) {
         log.error("status :: {}, errorType :: {}, errorCause :: {}",
                 HttpStatus.NOT_FOUND,
                 "NotFoundException",
                 e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(e.getMessage(), "NOT_FOUND", 404));
     }
 
     @ExceptionHandler(DuplicateException.class)
     @ResponseStatus(value = HttpStatus.CONFLICT)
-    public ResponseEntity<String> handleDuplicateException(DuplicateException e) {
+    public ResponseEntity<?> handleDuplicateException(DuplicateException e) {
         log.error("status :: {}, errorType :: {}, errorCause :: {}",
                 HttpStatus.CONFLICT,
                 "DuplicateException",
                 e.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(e.getMessage(), "DUPLICATED_ID", 409));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -67,5 +71,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
         // 401 또는 400 에러와 함께 메시지 전달
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+    }
+
+    // 로그인 실패시 Exception
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("아이디 혹은 비밀번호가 맞지 않습니다.", "AUTH_LOGIN_FAILED", 401));
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<?> handleInvalidTokenException(InvalidTokenException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(e.getMessage(), "INVALID_TOKEN", 401));
     }
 }

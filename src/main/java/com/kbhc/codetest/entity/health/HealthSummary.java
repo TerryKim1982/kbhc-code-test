@@ -3,6 +3,8 @@ package com.kbhc.codetest.entity.health;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,8 +24,7 @@ public class HealthSummary {
 
     private String recordKey;
 
-    @Column(name = "summary_date", columnDefinition = "DATE")
-    private String summaryDate;
+    private LocalDate summaryDate;
 
     private int totalSteps;
     private double totalCalories;

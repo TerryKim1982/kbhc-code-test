@@ -4,6 +4,7 @@ import com.kbhc.codetest.api.auth.jwt.JwtAccessDeniedHandler;
 import com.kbhc.codetest.api.auth.jwt.JwtAuthenticationEntryPoint;
 import com.kbhc.codetest.api.auth.jwt.JwtAuthenticationFilter;
 import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
+import com.kbhc.codetest.api.auth.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +28,8 @@ public class SecurityConfig {
 
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    private final RedisService redisService;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -44,7 +47,7 @@ public class SecurityConfig {
                     // 접근 권한 부족 exception handler
                     .accessDeniedHandler(jwtAccessDeniedHandler)       // 403: 인가 실패 (권한 부족)
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisService), UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );

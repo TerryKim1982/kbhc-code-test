@@ -47,7 +47,7 @@ public class HealthService {
         return ResponseEntity.ok(ApiResponse.success(response, "조회 성공"));
     }
 
-    public ResponseEntity<?> getDailyStats(String jwtToken, Long deviceId, String start,  String end) {
+    public ResponseEntity<?> getDailyStats(String jwtToken, Long deviceId, LocalDate start,  LocalDate end) {
         // Bearer 제거
         Long memberId = this.getMemberIdByToken(jwtToken);
 
@@ -58,7 +58,7 @@ public class HealthService {
 
         List<HealthStatsResponse> summaries = healthSummaryRepository.findAllByMemberIdAndDeviceIdAndSummaryDateBetween(memberId, deviceId, start, end).stream()
                 .map(s -> HealthStatsResponse.builder()
-                        .date(s.getSummaryDate())
+                        .date(s.getSummaryDate().toString())
                         .totalSteps(s.getTotalSteps())
                         .totalCalories(s.getTotalCalories())
                         .totalDistance(s.getTotalDistance())
@@ -85,8 +85,8 @@ public class HealthService {
         YearMonth endMonth = YearMonth.parse(end);
         YearMonth currentMonth = startMonth;
         while(!currentMonth.isAfter(endMonth)){
-            String startDate = currentMonth.atDay(1).toString();
-            String endDate = currentMonth.atEndOfMonth().toString();
+            LocalDate startDate = currentMonth.atDay(1);
+            LocalDate endDate = currentMonth.atEndOfMonth();
             List<HealthSummary> dailyData =
                     healthSummaryRepository.findAllByMemberIdAndDeviceIdAndSummaryDateBetween(memberId, deviceId, startDate, endDate);
             // 조회 결과가 있으면 합산

@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/health")
@@ -34,8 +36,8 @@ public class HealthController {
 
     @GetMapping(value = "/stats/daily")
     public ResponseEntity<?> getDailyStats(@RequestHeader("Authorization") String token,
-                                           @RequestParam Long deviceId, @RequestParam String start,
-                                           @RequestParam String end) {
+                                           @RequestParam Long deviceId, @RequestParam LocalDate start,
+                                           @RequestParam LocalDate end) {
         return healthService.getDailyStats(token, deviceId, start, end);
     }
 

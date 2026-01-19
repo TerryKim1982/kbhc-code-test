@@ -21,7 +21,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.*;
 
 @Service
 @Slf4j
@@ -58,25 +58,27 @@ public class HealthDataConsumer {
             return deviceRepository.save(newDevice);
         });
 
-        OffsetDateTime currentUploadTime = healthData.getLastUpdate();
+        // UTC -> 서울 시간으로 변경 후 LocalDateTime 으로 변환
+        LocalDateTime lastUploadTime = healthData.getLastUpdate().atZoneSameInstant(ZoneId.of("Asia/Seoul")).toLocalDateTime();
         // 2. 이미 해당 시간의 기록이 있는지 확인(중복 등록 방지)
-        if (healthRecordRepository.existsByDeviceAndUploadTime(device, currentUploadTime)) {
-            log.warn("이미 처리된 중복 데이터입니다. Device: {}, Time: {}", device.getRecordKey(), currentUploadTime);
+        if (healthRecordRepository.existsByDeviceAndUploadTime(device, lastUploadTime)) {
+            log.warn("이미 처리된 중복 데이터입니다. Device: {}, Time: {}", device.getRecordKey(), lastUploadTime);
             return;
         }
 
         // 3. HealthRecord 생성
         HealthRecord healthRecord = HealthRecord.builder()
                 .device(device)
-                .uploadTime(healthData.getLastUpdate())
+                .uploadTime(lastUploadTime)
                 .build();
 
         // 4. 자식 엔티티(HealthDetail) 변환 및 연관관계 편의 메서드로 추가
         healthData.getData().getEntries().forEach(entry -> {
 
             // 기기간 데이터형태가 달라 맞추는 작업
-            OffsetDateTime startLocal = DateUtils.parseToOffsetDateTime(entry.getPeriod().getFrom());
-            OffsetDateTime endLocal = DateUtils.parseToOffsetDateTime(entry.getPeriod().getTo());
+            LocalDateTime startLocal = DateUtils.parseToSeoulZone(entry.getPeriod().getFrom()).toLocalDateTime();
+            LocalDateTime endLocal = DateUtils.parseToSeoulZone(entry.getPeriod().getTo()).toLocalDateTime();
+            // 기기간 steps 데이터 형태가 달라 변환
             int steps = (int) Math.round(Double.parseDouble(entry.getSteps()));
 
             HealthDetail detail = HealthDetail.builder()
@@ -90,7 +92,7 @@ public class HealthDataConsumer {
             healthRecord.addDetail(detail); // 부모-자식 양방향 매핑
 
             // 통계 데이터(일별) 처리
-            String summaryDate = startLocal.toLocalDate().toString(); // OffsetDateTime -> LocalDate
+            LocalDate summaryDate = startLocal.toLocalDate();
             updateHealthSummary(device.getMember().getId(), device.getId(), device.getRecordKey(), summaryDate, entry);
         });
 
@@ -103,7 +105,7 @@ public class HealthDataConsumer {
     /**
      * 일별 통계 테이블 정보를 갱신합니다.
      */
-    private void updateHealthSummary(Long memberId, Long deviceId, String recordKey, String date, KafkaHealthData.Entry entry) {
+    private void updateHealthSummary(Long memberId, Long deviceId, String recordKey, LocalDate date, KafkaHealthData.Entry entry) {
         HealthSummary summary = healthSummaryRepository.findByMemberIdAndDeviceIdAndSummaryDate(memberId, deviceId, date)
                 .orElseGet(() ->
                         healthSummaryRepository.save(

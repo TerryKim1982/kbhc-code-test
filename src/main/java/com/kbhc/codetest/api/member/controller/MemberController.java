@@ -1,7 +1,7 @@
 package com.kbhc.codetest.api.member.controller;
 
 import com.kbhc.codetest.api.member.service.MemberService;
-import com.kbhc.codetest.dto.member.request.RequestMemberJoin;
+import com.kbhc.codetest.dto.member.request.MemberJoinRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ public class MemberController {
     private final MemberService memberService;
 
     @PostMapping(value = "/join")
-    public ResponseEntity<?> join(@Valid @RequestBody RequestMemberJoin request) {
+    public ResponseEntity<?> join(@Valid @RequestBody MemberJoinRequest request) {
         return memberService.join(request);
     }
 }

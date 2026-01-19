@@ -1,6 +1,7 @@
 package com.kbhc.codetest.api.health.service.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kbhc.codetest.dto.ApiResponse;
 import com.kbhc.codetest.dto.health.kafka.KafkaHealthData;
 import com.kbhc.codetest.dto.health.request.HealthDataSendRequest;
 import com.kbhc.codetest.util.DateUtils;
@@ -11,7 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Slf4j
@@ -28,11 +30,15 @@ public class KafkaService {
             // 파일 역직렬화
             KafkaHealthData fullData = objectMapper.readValue(file.getInputStream(), KafkaHealthData.class);
 
-            OffsetDateTime lastUpdate = fullData.getLastUpdate();
+            // UTC 시간 기준을 한국표준시 기준 ZonedDateTime으로 변경
+            ZonedDateTime lastUpdate = fullData.getLastUpdate().atZoneSameInstant(ZoneId.of("Asia/Seoul"));
 
             List<KafkaHealthData.Entry> filteredEntries = fullData.getData().getEntries().stream().toList().stream()
                     .filter(entry -> {
-                        OffsetDateTime entryTime = DateUtils.parseToOffsetDateTime(entry.getPeriod().getFrom());
+                        // 헬스킷과 삼성헬스와의 타임존이 다르므로 서울시간으로 맞춰서 변환(삼성헬스에는 한국시간으로 저장되어있다고 가정)
+                        ZonedDateTime entryTime = DateUtils.parseToSeoulZone(entry.getPeriod().getFrom());
+                        // 업데이트 시간 이후 수집된 데이터만 필터링
+                        // 같은 ZonedDateTime으로 비교
                         return entryTime.isAfter(lastUpdate);
                     })
                     .toList();
@@ -45,7 +51,6 @@ public class KafkaService {
                 healthDataSendRequest.setEmail(email);
                 healthDataSendRequest.setHealthData(fullData);
 
-                // Kafka Producer에게 데이터 전달
                 healthDataProducer.send(healthDataSendRequest);
             }
 
@@ -53,6 +58,7 @@ public class KafkaService {
         catch (IOException e) {
             return ResponseEntity.internalServerError().body("파일 처리중 오류가 발생하였습니다.");
         }
-        return ResponseEntity.ok("파일 업로드 및 데이터 분석 요청 완료 (파일명: " + file.getOriginalFilename() + ")");
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("파일 업로드 및 데이터 분석 요청 완료 (파일명: " + file.getOriginalFilename() + ")"));
     }
 }

@@ -3,8 +3,9 @@ package com.kbhc.codetest.api.auth.service;
 import com.kbhc.codetest.api.auth.jwt.JwtTokenProvider;
 import com.kbhc.codetest.dto.jwt.JwtToken;
 import com.kbhc.codetest.dto.jwt.JwtTokenRequest;
-import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
+import com.kbhc.codetest.dto.auth.request.MemberLoginRequest;
 import com.kbhc.codetest.entity.member.Member;
+import com.kbhc.codetest.exception.InvalidTokenException;
 import com.kbhc.codetest.exception.NotFoundException;
 import com.kbhc.codetest.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AuthService {
 
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
@@ -37,8 +39,7 @@ public class AuthService {
      * 4. 리프레시 토큰을 redis에 저장
      */
 
-    @Transactional
-    public JwtToken login(RequestMemberLogin request) {
+    public JwtToken login(MemberLoginRequest request) {
 
         // 1. 사용자 인증정보 설정
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -75,11 +76,10 @@ public class AuthService {
         return jwtToken;
     }
 
-    @Transactional
     public JwtToken reissue(JwtTokenRequest request) {
         // 1. Refresh Token 유효성 검증
         if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
-            throw new RuntimeException("리프레시 토큰이 유효하지 않습니다.");
+            throw new InvalidTokenException("리프레시 토큰이 유효하지 않습니다.");
         }
 
         // 2. access Token에서 Email 추출
@@ -88,7 +88,7 @@ public class AuthService {
         // 3. Redis에 저장된 Refresh Token과 일치하는지 확인
         String savedRefreshToken = redisService.getRefreshToken(email);
         if (!request.getRefreshToken().equals(savedRefreshToken)) {
-            throw new RuntimeException("리프레시 토큰 정보가 일치하지 않거나 로그아웃된 사용자 입니다.");
+            throw new InvalidTokenException("리프레시 토큰 정보가 일치하지 않거나 로그아웃된 사용자 입니다.");
         }
 
         // 4. 새로운 토큰 생성
@@ -122,9 +122,7 @@ public class AuthService {
      * 2. 리프레시 토큰 삭제
      * 3. 액세스 토큰 블랙리스트 처리
      */
-    @Transactional
     public void logout(String accessToken) {
-        // FIXME. 예외 처리 추가할 것
         // 토큰 validation
         if (accessToken == null || accessToken.isBlank()) {
             log.warn("빈 토큰으로 로그아웃 요청됨");

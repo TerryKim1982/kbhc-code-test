@@ -1,9 +1,10 @@
 package com.kbhc.codetest.api.auth.controller;
 
+import com.kbhc.codetest.dto.ApiResponse;
 import com.kbhc.codetest.dto.jwt.JwtToken;
 import com.kbhc.codetest.dto.jwt.JwtTokenRequest;
 import com.kbhc.codetest.api.auth.service.AuthService;
-import com.kbhc.codetest.dto.auth.request.RequestMemberLogin;
+import com.kbhc.codetest.dto.auth.request.MemberLoginRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,21 +19,22 @@ public class AuthController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<JwtToken> login(@RequestBody RequestMemberLogin request) {
+    public ResponseEntity<JwtToken> login(@RequestBody MemberLoginRequest request) {
         JwtToken token = authService.login(request);
         return ResponseEntity.ok(token);
     }
 
     // 로그아웃 (헤더에 Bearer 토큰)
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader(name = "Authorization", required = false) String authorization) {
+    public ResponseEntity<?> logout(@RequestHeader(name = "Authorization", required = false) String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Authorization 헤더에 Bearer 토큰이 필요합니다.");
+                    .body(ApiResponse.error("Authorization 헤더에 Bearer 토큰이 필요합니다.", "INVALID_TOKEN", 400));
         }
         String accessToken = authorization.substring(7);
         authService.logout(accessToken);
-        return ResponseEntity.ok("로그아웃 되었습니다.");
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("정상적으로 로그아웃 되었습니다."));
     }
 
     @PostMapping("/reissue")

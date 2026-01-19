@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class HealthRecord {
     @OneToMany(mappedBy = "healthRecord", cascade = CascadeType.ALL)
     private List<HealthDetail> details = new ArrayList<>();
 
-    private OffsetDateTime uploadTime;
+    private LocalDateTime uploadTime;
 
     public void addDetail(HealthDetail detail) {
         this.details.add(detail);

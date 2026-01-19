@@ -1,5 +1,6 @@
 package com.kbhc.codetest.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,17 +14,20 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
     private boolean success;
     private String message;
     private T data;
     private String errorCode;
+    private int status;
     private long timestamp;
 
     public static <T> ApiResponse<T> success() {
         return ApiResponse.<T>builder()
                 .success(true)
+                .status(200)
                 .timestamp(System.currentTimeMillis())
                 .build();
     }
@@ -31,6 +35,7 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
                 .success(true)
+                .status(200)
                 .message(message)
                 .data(data)
                 .timestamp(System.currentTimeMillis())
@@ -40,16 +45,18 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> success(String message) {
         return ApiResponse.<T>builder()
                 .success(true)
+                .status(200)
                 .message(message)
                 .timestamp(System.currentTimeMillis())
                 .build();
     }
 
-    public static <T> ApiResponse<T> error(String message, String errorCode) {
+    public static <T> ApiResponse<T> error(String message, String errorCode, int status) {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
                 .errorCode(errorCode)
+                .status(status)
                 .timestamp(System.currentTimeMillis())
                 .build();
     }

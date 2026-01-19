@@ -1,5 +1,6 @@
 package com.kbhc.codetest.api.auth.jwt;
 
+import com.kbhc.codetest.api.auth.service.RedisService;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,6 +21,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    private final RedisService redisService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
@@ -35,9 +38,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         catch (Exception e) {
             if (e instanceof ExpiredJwtException) {
-                request.setAttribute("exception", "EXPIRED_TOKEN");
+                String email = ((ExpiredJwtException) e).getClaims().getSubject();
+                boolean hasRefreshToken = redisService.hasKey(email);
+                if(hasRefreshToken){
+                    request.setAttribute("exception", "REISSUE");
+                }
+                else {
+                    request.setAttribute("exception", "EXPIRED");
+                }
             } else {
-                request.setAttribute("exception", "INVALID_TOKEN");
+                request.setAttribute("exception", "INVALID");
             }
         }
         filterChain.doFilter(request, response);

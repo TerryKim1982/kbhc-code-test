@@ -32,4 +32,8 @@ public class RedisService {
     public void setBlackList(String key, String value, long duration) {
         redisTemplate.opsForValue().set(key, value, duration, TimeUnit.MILLISECONDS);
     }
+
+    public boolean hasKey(String email) {
+        return redisTemplate.hasKey(REFRESH_TOKEN_PREFIX + email);
+    }
 }
