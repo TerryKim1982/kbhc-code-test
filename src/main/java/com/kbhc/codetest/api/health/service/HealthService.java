@@ -30,8 +30,6 @@ public class HealthService {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-
-
     public ResponseEntity<?> getMyDeviceList(String email) {
         List<Device> myDeviceList = deviceRepository.findAllByMember_Email(email);
         if(myDeviceList.isEmpty()){
